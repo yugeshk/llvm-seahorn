@@ -158,6 +158,28 @@ struct LoopPassPrinter : public LoopPass {
 
 char LoopPassPrinter::ID = 0;
 
+std::string GetNameStr(llvm::Region *region) {
+  std::string exitName;
+  std::string entryName;
+
+  if (region->getEntry()->getName().empty()) {
+    llvm::raw_string_ostream OS(entryName);
+    region->getEntry()->printAsOperand(OS, false);
+  } else
+    entryName = region->getEntry()->getName();
+
+  if (region->getExit()) {
+    if (region->getExit()->getName().empty()) {
+      llvm::raw_string_ostream OS(exitName);
+      region->getExit()->printAsOperand(OS, false);
+    } else
+      exitName = region->getExit()->getName();
+  } else
+    exitName = "<Function Return>";
+
+  return entryName + " => " + exitName;
+}
+
 struct RegionPassPrinter : public RegionPass {
   static char ID;
   const PassInfo *PassToPrint;
@@ -174,7 +196,7 @@ struct RegionPassPrinter : public RegionPass {
   bool runOnRegion(Region *R, RGPassManager &RGM) override {
     if (!QuietPass) {
       Out << "Printing analysis '" << PassToPrint->getPassName() << "' for "
-          << "region: '" << R->getNameStr() << "' in function '"
+          << "region: '" << GetNameStr(R) << "' in function '"
           << R->getEntry()->getParent()->getName() << "':\n";
     }
     // Get and print pass...
